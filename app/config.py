@@ -72,15 +72,24 @@ EXTRACTION_EFFORT = "medium"
 #   "auto"          - prefer a bearer token if one is present, else the CLI.
 EXTRACTION_PROVIDER = os.environ.get("EXTRACTION_PROVIDER", "auto")
 
+# The text path and the vision path are configured separately, and may point
+# at different models on different providers.
+#
+# That is not over-engineering - it reflects a real constraint. Several of the
+# strongest free models are text-only, so the model that reads a machine-readable
+# PDF well is frequently not one that can read a scanned page at all. Routing by
+# modality lets each path use whatever is actually good at its job.
 OPENAI_COMPAT_BASE_URL = os.environ.get(
     "OPENAI_COMPAT_BASE_URL", "https://openrouter.ai/api/v1")
-# Free-tier defaults so a deployed demo costs nothing. Both are environment
-# variables because free model availability changes often - if extraction
-# quality drops, change the model here rather than the code.
 OPENAI_COMPAT_MODEL = os.environ.get(
-    "OPENAI_COMPAT_MODEL", "nex-agi/nex-n2.5-pro:free")
+    "OPENAI_COMPAT_MODEL", "nvidia/nemotron-3.5-lightning:free")
+
+# Vision defaults to the same provider, but can be pointed elsewhere entirely.
+OPENAI_COMPAT_VISION_BASE_URL = os.environ.get(
+    "OPENAI_COMPAT_VISION_BASE_URL", OPENAI_COMPAT_BASE_URL)
 OPENAI_COMPAT_VISION_MODEL = os.environ.get(
-    "OPENAI_COMPAT_VISION_MODEL", OPENAI_COMPAT_MODEL)
+    "OPENAI_COMPAT_VISION_MODEL", "nex-agi/nex-n2.5-pro:free")
+
 OPENAI_COMPAT_TIMEOUT = float(os.environ.get("OPENAI_COMPAT_TIMEOUT", "120"))
 
 # Fields we refuse to guess at. Missing any of these changes the decision.

@@ -24,7 +24,8 @@ from typing import Any, Optional
 import httpx
 
 from ..config import (OPENAI_COMPAT_BASE_URL, OPENAI_COMPAT_MODEL,
-                      OPENAI_COMPAT_TIMEOUT, OPENAI_COMPAT_VISION_MODEL)
+                      OPENAI_COMPAT_TIMEOUT, OPENAI_COMPAT_VISION_BASE_URL,
+                      OPENAI_COMPAT_VISION_MODEL)
 from .schema import INVOICE_SCHEMA, SYSTEM_PROMPT
 
 
@@ -32,10 +33,25 @@ class ExtractionError(RuntimeError):
     pass
 
 
-def _api_key() -> str:
-    key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+def _api_key(vision: bool = False) -> str:
+    """Resolve the bearer token for this path.
+
+    The vision path may sit on a different provider from the text path, so it
+    gets its own optional key and falls back to the shared one when both paths
+    use the same provider.
+    """
+    if vision:
+        vision_key = os.environ.get("OPENAI_COMPAT_VISION_API_KEY", "")
+        if vision_key:
+            return vision_key
+
+    key = (os.environ.get("OPENROUTER_API_KEY")
+           or os.environ.get("NVIDIA_API_KEY")
+           or os.environ.get("OPENAI_API_KEY", ""))
     if not key:
-        raise ExtractionError("no OPENROUTER_API_KEY / OPENAI_API_KEY in the environment")
+        raise ExtractionError(
+            "no API key found - set OPENROUTER_API_KEY, NVIDIA_API_KEY "
+            "or OPENAI_API_KEY")
     return key
 
 
@@ -126,7 +142,8 @@ def _coerce(raw: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-async def _post(messages: list[dict[str, Any]], model: str) -> dict[str, Any]:
+async def _post(messages: list[dict[str, Any]], model: str,
+                base_url: str, vision: bool = False) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "model": model,
         "messages": messages,
@@ -136,14 +153,14 @@ async def _post(messages: list[dict[str, Any]], model: str) -> dict[str, Any]:
         "response_format": {"type": "json_object"},
     }
     headers = {
-        "Authorization": f"Bearer {_api_key()}",
+        "Authorization": f"Bearer {_api_key(vision)}",
         "Content-Type": "application/json",
         # OpenRouter uses these for attribution; harmless on other providers.
         "HTTP-Referer": "https://github.com/rohit291103/zamp-invoice-workflow",
         "X-Title": "AP Invoice Workflow",
     }
     async with httpx.AsyncClient(timeout=OPENAI_COMPAT_TIMEOUT) as client:
-        r = await client.post(f"{OPENAI_COMPAT_BASE_URL}/chat/completions",
+        r = await client.post(f"{base_url.rstrip('/')}/chat/completions",
                               json=payload, headers=headers)
     if r.status_code != 200:
         raise ExtractionError(f"{model} returned HTTP {r.status_code}: {r.text[:200]}")
@@ -170,7 +187,7 @@ async def extract_from_text(text: str) -> dict[str, Any]:
         {"role": "user", "content":
             "Extract the invoice fields from this text, taken directly from a "
             f"PDF's text layer.\n\n<invoice_text>\n{text}\n</invoice_text>"},
-    ], OPENAI_COMPAT_MODEL)
+    ], OPENAI_COMPAT_MODEL, OPENAI_COMPAT_BASE_URL)
 
 
 async def extract_from_image(png_b64: str) -> dict[str, Any]:
@@ -186,7 +203,7 @@ async def extract_from_image(png_b64: str) -> dict[str, Any]:
                 "conservative with field_confidence: anything blurred, skewed or "
                 "ambiguous should score below 0.9."},
         ]},
-    ], OPENAI_COMPAT_VISION_MODEL)
+    ], OPENAI_COMPAT_VISION_MODEL, OPENAI_COMPAT_VISION_BASE_URL, vision=True)
 
 
 # Kept so the schema import is not flagged as unused; the strict schema is used

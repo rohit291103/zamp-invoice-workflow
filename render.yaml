@@ -13,14 +13,21 @@ services:
       # A server has no Claude Code CLI, so extraction goes over HTTP.
       - key: EXTRACTION_PROVIDER
         value: openai_compat
+
+      # --- text path: machine-readable PDFs -----------------------------
       - key: OPENAI_COMPAT_BASE_URL
         value: https://openrouter.ai/api/v1
-      # Free tier by default. Change these in the Render dashboard if a
-      # particular model turns out to read invoices badly.
       - key: OPENAI_COMPAT_MODEL
-        value: nex-agi/nex-n2.5-pro:free
+        value: nvidia/nemotron-3.5-lightning:free
+
+      # --- vision path: scanned pages -----------------------------------
+      # Separate because the strongest free text models are text-only, and a
+      # scanned invoice cannot be read by a model that does not accept images.
+      - key: OPENAI_COMPAT_VISION_BASE_URL
+        value: https://openrouter.ai/api/v1
       - key: OPENAI_COMPAT_VISION_MODEL
         value: nex-agi/nex-n2.5-pro:free
-      # Set this in the dashboard — never commit it.
+
+      # Set in the dashboard — never committed.
       - key: OPENROUTER_API_KEY
         sync: false
