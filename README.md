@@ -94,11 +94,28 @@ must use the HTTP backend. `render.yaml` is a working blueprint:
 Everything else — provider, base URL, models — is already set in the blueprint
 and overridable from the dashboard without a code change.
 
+### Verifying a backend before you point a link at it
+
+```bash
+EXTRACTION_PROVIDER=openai_compat ./.venv/bin/python scripts/compare_providers.py
+```
+
+Runs all eleven scenarios against hand-verified extraction and reports field
+accuracy and decision correctness separately — a model can be wrong in ways that
+never change the outcome, and right in ways that do.
+
+Measured on `nex-agi/nex-n2.5-pro:free`: **44/44 fields, 11/11 decisions**,
+identical to Claude, including reading the scanned invoice through the vision
+path. Two other candidates failed for instructive reasons — Gemma 4 is
+vision-capable but was 429 saturated on the free tier, and NVIDIA's Nemotron
+responds well but accepts no image input, so it cannot read a scan at all.
+
 **Two honest caveats.** Render's free tier sleeps after 15 minutes idle and
-takes roughly 50 seconds to wake, so warm it before sharing the link. And the
-free models are materially weaker than Claude at reading a skewed, grainy scan —
-test `02_edge_scanned_freight.pdf` on whatever model you deploy with before
-relying on it, and change `OPENAI_COMPAT_VISION_MODEL` if the reading is poor.
+takes roughly 50 seconds to wake, so warm it before sharing the link. And free
+model tiers rate-limit without warning — the retry logic absorbs short bursts,
+but sustained saturation drops runs to the regex extractor. If the link has to
+be dependable at an unknown moment, put credit on the account or point
+`OPENAI_COMPAT_*` at a paid model.
 
 
 ## The interface

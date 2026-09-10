@@ -14,15 +14,19 @@ services:
       - key: EXTRACTION_PROVIDER
         value: openai_compat
 
-      # --- text path: machine-readable PDFs -----------------------------
+      # Both paths use one model because it accepts images as well as text,
+      # and it is the configuration actually verified against the reference
+      # behaviour: 44/44 fields and 11/11 decisions, matching Claude exactly.
+      # Re-check with scripts/compare_providers.py before changing either.
+      #
+      # Rejected alternatives, and why:
+      #   google/gemma-4-*:free            vision-capable, but 429 saturated
+      #   nvidia/nemotron-3.5-lightning    text-only, so it cannot read a scan
+      #   thinkingmachines/inkling-small   403, agentic harnesses only
       - key: OPENAI_COMPAT_BASE_URL
         value: https://openrouter.ai/api/v1
       - key: OPENAI_COMPAT_MODEL
-        value: nvidia/nemotron-3.5-lightning:free
-
-      # --- vision path: scanned pages -----------------------------------
-      # Separate because the strongest free text models are text-only, and a
-      # scanned invoice cannot be read by a model that does not accept images.
+        value: nex-agi/nex-n2.5-pro:free
       - key: OPENAI_COMPAT_VISION_BASE_URL
         value: https://openrouter.ai/api/v1
       - key: OPENAI_COMPAT_VISION_MODEL
