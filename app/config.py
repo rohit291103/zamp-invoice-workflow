@@ -7,6 +7,29 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_dotenv() -> None:
+    """Read BASE_DIR/.env into the environment if it exists.
+
+    Deliberately hand-rolled rather than adding a dependency: this reads six
+    lines of KEY=value at startup. Real environment variables always win, so a
+    stale .env can never override what a deployment platform sets.
+    """
+    env_file = BASE_DIR / ".env"
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv()
 DATA_DIR = BASE_DIR / "data"
 INVOICE_DIR = DATA_DIR / "invoices"
 DB_PATH = DATA_DIR / "runs.db"
