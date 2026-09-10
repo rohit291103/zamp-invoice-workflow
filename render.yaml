@@ -1,0 +1,26 @@
+# Render blueprint. Deploy: New → Blueprint → point at this repo.
+services:
+  - type: web
+    name: ap-invoice-workflow
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/stats
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.0"
+      # A server has no Claude Code CLI, so extraction goes over HTTP.
+      - key: EXTRACTION_PROVIDER
+        value: openai_compat
+      - key: OPENAI_COMPAT_BASE_URL
+        value: https://openrouter.ai/api/v1
+      # Free tier by default. Change these in the Render dashboard if a
+      # particular model turns out to read invoices badly.
+      - key: OPENAI_COMPAT_MODEL
+        value: nex-agi/nex-n2.5-pro:free
+      - key: OPENAI_COMPAT_VISION_MODEL
+        value: nex-agi/nex-n2.5-pro:free
+      # Set this in the dashboard — never commit it.
+      - key: OPENROUTER_API_KEY
+        sync: false

@@ -1,0 +1,7 @@
+vendor_id,legal_name,aliases,status,status_reason,tax_id,country,default_currency,payment_terms
+V-1001,Acme Steel Works Pvt Ltd,ACME STEEL|Acme Steel Works|ACME STEEL WORKS PVT LTD,approved,,29AABCA1234F1Z5,IN,USD,NET30
+V-1002,Northwind Logistics BV,NORTHWIND LOGISTICS|Northwind Log. B.V.,approved,,NL812345678B01,NL,EUR,NET45
+V-1003,Kestrel Office Supplies LLC,KESTREL OFFICE SUPPLIES|Kestrel Office Sup.,approved,,84-2915530,US,USD,NET15
+V-1004,Brightline Consulting Group,BRIGHTLINE CONSULTING|Brightline Grp,on_hold,W-9 tax certificate expired 2026-06-30,45-7781203,US,USD,NET30
+V-1005,Vertex Packaging Co,VERTEX PACKAGING|Vertex Pkg Co,approved,,77-3320981,US,USD,NET30
+V-1006,Halcyon IT Services,HALCYON IT|Halcyon I.T. Services,blocked,Failed sanctions re-screen 2026-08-14,61-4409922,US,USD,NET30

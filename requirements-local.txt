@@ -1,0 +1,10 @@
+# Local development only.
+#
+# The Claude Agent SDK authenticates through the Claude Code CLI's OAuth
+# session, so it is useful on a developer machine and useless on a server —
+# a deployed instance uses the OpenAI-compatible backend instead. Kept out of
+# requirements.txt so the deploy image doesn't carry a dependency it can
+# never exercise.
+-r requirements.txt
+claude-agent-sdk==0.2.152
+pytest==9.0.2

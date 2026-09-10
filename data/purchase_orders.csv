@@ -1,0 +1,9 @@
+po_number,vendor_id,description,currency,po_amount,issued_date,status,allow_partial,tolerance_pct
+PO-4401,V-1001,Hot-rolled steel plates 12mm - 40MT,USD,48600.00,2026-07-02,open,false,2.0
+PO-4402,V-1002,Inbound freight - Rotterdam Q3,EUR,12400.00,2026-07-11,open,false,2.0
+PO-4403,V-1003,Office consumables - HQ replenishment,USD,3150.00,2026-08-01,open,false,2.0
+PO-4404,V-1005,Corrugated shipping boxes - 3 releases,USD,27000.00,2026-06-20,open,true,2.0
+PO-4405,V-1004,Advisory retainer - H2 2026,USD,15000.00,2026-07-01,open,true,2.0
+PO-4406,V-1003,Printer toner cartridges,USD,890.00,2026-03-15,closed,false,2.0
+PO-4407,V-1006,Engineering laptops - 20 units,USD,41200.00,2026-08-05,open,false,2.0
+PO-4408,V-1001,Galvanised steel coils - 5MT,USD,6400.00,2026-08-10,open,false,2.0

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AP Invoice Process</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <h1>Accounts Payable — Invoice Process</h1>
+    <span>An invoice PDF goes in. A reasoned payment decision comes out.</span>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="run" aria-selected="true">Run</button>
+    <button class="tab" role="tab" data-view="dash" aria-selected="false">History</button>
+    <button class="tab" role="tab" data-view="ref" aria-selected="false">Orders &amp; suppliers</button>
+  </nav>
+  <div class="spacer"></div>
+  <button class="ghost-btn accent" id="tour-btn">Show me around</button>
+  <button class="ghost-btn" id="reset-btn" title="Clear all run history">Reset history</button>
+</header>
+
+<!-- ============ RUN ============ -->
+<section class="view active" id="view-run">
+  <div class="run-layout">
+
+    <aside class="picker" id="picker">
+      <h2>Pick an invoice</h2>
+      <p class="picker-intro">Eleven realistic scenarios. Each one is a situation an
+        accounts-payable team actually runs into.</p>
+      <div id="inv-list"></div>
+      <div class="dropzone" id="dropzone">
+        <b>Or drop your own PDF</b>
+        <span class="muted">any invoice — click to browse</span>
+        <input type="file" id="file-input" accept="application/pdf" hidden>
+      </div>
+    </aside>
+
+    <main class="panel" id="run-panel">
+
+      <div class="empty" id="run-empty">
+        <div class="empty-inner">
+          <h3>Choose a scenario on the left</h3>
+          <p>You'll see what the invoice is, why it's interesting, and the actual
+             document — before anything runs.</p>
+          <button class="primary-btn" id="empty-tour-btn">Show me around instead</button>
+        </div>
+      </div>
+
+      <div id="run-body" hidden>
+        <div class="panel-head">
+          <div class="ph-text">
+            <h3 id="run-title">—</h3>
+            <div class="sub" id="run-sub"></div>
+          </div>
+          <span class="pill" id="run-status" hidden>running</span>
+        </div>
+
+        <!-- Scenario briefing: the context that was missing -->
+        <section class="brief" id="brief">
+          <div class="brief-row">
+            <div class="brief-label">The situation</div>
+            <p class="brief-text" id="brief-story"></p>
+          </div>
+          <div class="brief-row">
+            <div class="brief-label">Why it's tricky</div>
+            <p class="brief-text" id="brief-hard"></p>
+          </div>
+          <div class="brief-row">
+            <div class="brief-label">What to watch</div>
+            <p class="brief-text" id="brief-watch"></p>
+          </div>
+          <div class="brief-foot" id="brief-foot"></div>
+        </section>
+
+        <div class="run-cta" id="run-cta">
+          <button class="primary-btn" id="run-btn">Run the process</button>
+          <span class="muted" id="run-cta-note">Seven stages, about seven seconds.</span>
+        </div>
+
+        <div class="stages-wrap" id="stages-wrap" hidden>
+          <div class="stages-head">
+            <h4>The process</h4>
+            <span class="muted" id="stages-note">Each stage appears as it finishes.</span>
+          </div>
+          <div class="stages" id="stage-list"></div>
+        </div>
+
+        <div id="decision-slot"></div>
+      </div>
+    </main>
+
+    <aside class="doc-panel" id="doc-panel" hidden>
+      <div class="doc-head">
+        <h2>The document</h2>
+        <a id="doc-open" href="#" target="_blank" rel="noopener">Open full size ↗</a>
+      </div>
+      <div class="doc-meta" id="doc-meta"></div>
+      <div class="doc-frame" id="doc-frame"></div>
+    </aside>
+
+  </div>
+</section>
+
+<!-- ============ HISTORY ============ -->
+<section class="view" id="view-dash">
+  <div class="pad">
+    <div class="section-intro">
+      <h2>Everything this instance has processed</h2>
+      <p>History isn't a log — the process reads it. Duplicate detection and
+         order balances both depend on what came before.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <h4>Decision mix</h4>
+      <div class="meter" id="mix-meter"></div>
+      <div class="legend" id="mix-legend"></div>
+    </div>
+    <div class="card">
+      <h4>Run history <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">— click any row for the full audit trail</span></h4>
+      <div class="scroll-x">
+        <table>
+          <thead><tr>
+            <th>When</th><th>Invoice</th><th>Supplier</th><th>Order</th>
+            <th class="num">Amount</th><th>Read as</th><th>Decision</th><th>Human</th><th class="num">Time</th>
+          </tr></thead>
+          <tbody id="runs-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MASTER DATA ============ -->
+<section class="view" id="view-ref">
+  <div class="pad">
+    <div class="section-intro">
+      <h2>What we agreed to buy, and who from</h2>
+      <p>The process checks every invoice against these two lists. The bars show
+         how much of each purchase order has been used up.</p>
+    </div>
+    <div class="card">
+      <h4>Purchase orders — live consumption</h4>
+      <p class="card-note">An order is money we have already committed. <b>Billed</b> is
+         paid or approved; <b>pending</b> is waiting on a human but still counts, because
+         it will almost certainly be paid.</p>
+      <div id="po-list"></div>
+    </div>
+    <div class="card">
+      <h4>Supplier master</h4>
+      <p class="card-note">Invoices are matched to suppliers by tax ID first, then by name.</p>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>ID</th><th>Legal name</th><th>Status</th><th>Tax ID</th><th>Ccy</th><th>Terms</th></tr></thead>
+          <tbody id="vendor-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RUN DETAIL DRAWER ============ -->
+<div class="drawer-bg" id="drawer-bg"></div>
+<aside class="drawer" id="drawer">
+  <button class="drawer-close" id="drawer-close" aria-label="Close">×</button>
+  <div id="drawer-body"></div>
+</aside>
+
+<!-- ============ WELCOME ============ -->
+<div class="modal-bg" id="welcome" hidden>
+  <div class="modal">
+    <p class="modal-eyebrow">Zamp case study · Invoice processing</p>
+    <h2>An invoice arrives. What happens to it?</h2>
+    <p>A mid-size company gets hundreds of supplier invoices a month, all as PDFs.
+       Someone opens each one, finds the matching purchase order, checks the numbers,
+       and decides what to do. It's slow, and Friday afternoon mistakes are expensive.</p>
+    <p>This does that job end to end. It reads the PDF — including scans with no
+       text in them — matches it to a purchase order, runs seventeen checks, and
+       produces one of four decisions with its reasoning attached.</p>
+    <div class="modal-points">
+      <div><b>The interesting part</b><span>Most costly mistakes aren't visible inside a single
+        invoice. A duplicate looks fine alone. So does a third delivery that overruns its order.</span></div>
+      <div><b>Where the AI is</b><span>The model reads documents. It doesn't decide anything —
+        every rule is ordinary code, so it can be tested and explained.</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="primary-btn" id="welcome-tour">Show me around <span class="kbd-hint">2 min</span></button>
+      <button class="ghost-btn" id="welcome-close">I'll explore myself</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GUIDED TOUR ============ -->
+<div class="tour" id="tour" hidden>
+  <div class="tour-dim" data-side="top"></div>
+  <div class="tour-dim" data-side="bottom"></div>
+  <div class="tour-dim" data-side="left"></div>
+  <div class="tour-dim" data-side="right"></div>
+  <div class="tour-ring" id="tour-ring"></div>
+  <div class="tour-card" id="tour-card" role="dialog" aria-live="polite">
+    <div class="tour-top">
+      <span class="tour-count" id="tour-count"></span>
+      <button class="tour-skip" id="tour-skip">Skip</button>
+    </div>
+    <h4 id="tour-title"></h4>
+    <p id="tour-body"></p>
+    <div class="tour-actions">
+      <button class="ghost-btn sm" id="tour-back">Back</button>
+      <button class="primary-btn sm" id="tour-next">Next</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
