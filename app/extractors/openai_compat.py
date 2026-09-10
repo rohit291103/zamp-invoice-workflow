@@ -16,16 +16,18 @@ disciplined than Claude:
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
+import random
 import re
 from typing import Any, Optional
 
 import httpx
 
-from ..config import (OPENAI_COMPAT_BASE_URL, OPENAI_COMPAT_MODEL,
-                      OPENAI_COMPAT_TIMEOUT, OPENAI_COMPAT_VISION_BASE_URL,
-                      OPENAI_COMPAT_VISION_MODEL)
+from ..config import (OPENAI_COMPAT_BASE_URL, OPENAI_COMPAT_MAX_RETRIES,
+                      OPENAI_COMPAT_MODEL, OPENAI_COMPAT_TIMEOUT,
+                      OPENAI_COMPAT_VISION_BASE_URL, OPENAI_COMPAT_VISION_MODEL)
 from .schema import INVOICE_SCHEMA, SYSTEM_PROMPT
 
 
@@ -159,11 +161,32 @@ async def _post(messages: list[dict[str, Any]], model: str,
         "HTTP-Referer": "https://github.com/rohit291103/zamp-invoice-workflow",
         "X-Title": "AP Invoice Workflow",
     }
+    # Free model tiers rate-limit aggressively and transiently. A 429 usually
+    # clears within seconds, so retrying is the difference between a working
+    # demo and one that silently drops to the regex extractor.
+    url = f"{base_url.rstrip('/')}/chat/completions"
+    last = ""
     async with httpx.AsyncClient(timeout=OPENAI_COMPAT_TIMEOUT) as client:
-        r = await client.post(f"{base_url.rstrip('/')}/chat/completions",
-                              json=payload, headers=headers)
-    if r.status_code != 200:
-        raise ExtractionError(f"{model} returned HTTP {r.status_code}: {r.text[:200]}")
+        for attempt in range(OPENAI_COMPAT_MAX_RETRIES + 1):
+            r = await client.post(url, json=payload, headers=headers)
+            if r.status_code == 200:
+                break
+            last = f"HTTP {r.status_code}: {r.text[:200]}"
+            # 4xx other than 429 are our fault - a bad model id, a bad key -
+            # and retrying just wastes the caller's time.
+            if r.status_code != 429 and r.status_code < 500:
+                raise ExtractionError(f"{model} returned {last}")
+            if attempt == OPENAI_COMPAT_MAX_RETRIES:
+                raise ExtractionError(
+                    f"{model} still failing after {attempt + 1} attempts - {last}")
+            retry_after = r.headers.get("retry-after")
+            try:
+                delay = float(retry_after) if retry_after else 0.0
+            except ValueError:
+                delay = 0.0
+            # Exponential backoff with jitter, so parallel runs don't sync up.
+            delay = delay or min(2 ** attempt + random.uniform(0, 0.6), 20.0)
+            await asyncio.sleep(delay)
 
     body = r.json()
     if "choices" not in body or not body["choices"]:

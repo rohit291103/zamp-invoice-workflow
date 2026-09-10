@@ -91,6 +91,8 @@ OPENAI_COMPAT_VISION_MODEL = os.environ.get(
     "OPENAI_COMPAT_VISION_MODEL", "nex-agi/nex-n2.5-pro:free")
 
 OPENAI_COMPAT_TIMEOUT = float(os.environ.get("OPENAI_COMPAT_TIMEOUT", "120"))
+# Free tiers rate-limit transiently; a 429 typically clears in seconds.
+OPENAI_COMPAT_MAX_RETRIES = int(os.environ.get("OPENAI_COMPAT_MAX_RETRIES", "4"))
 
 # Fields we refuse to guess at. Missing any of these changes the decision.
 CRITICAL_FIELDS = ("vendor_name", "invoice_number", "invoice_total", "currency")
